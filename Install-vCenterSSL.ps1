@@ -24,9 +24,9 @@ function Show-Failure {
 
 # --- Edit Variables Below ---
     
-$vCenterURL = "vc.virtuallywired.io"
-$CommonName = "vc.virtuallywired.io"
-$EmailContact = "nicholas@ivirtuallywired.io"
+$vCenterURL = "vc.domain.com"
+$CommonName = "vc.domain.com"
+$EmailContact = "user@domain.com"
 $Credential = Get-Credential
     
 # --- Do Not Edit Below This Point ---
