@@ -1,5 +1,5 @@
 # This Script will Request, Generate and Install a Free 90 Day Trusted SSL for your vCenter Server.
-# Posh-ACME PowerShell Module Requred
+# Posh-ACME PowerShell Module Requred - Credit to Ryan Bolger - https://github.com/rmbolger
 # Version: 1.0
 # Tested on vCenter 7
 # Test with PowerShell 5.1 and PowerShell 7
@@ -9,6 +9,7 @@
 # You will be prompted for vCenter Credentials.
 # You will be prompted to create a TXT record on your DNS to validate Domain Ownership.
 
+# --- Required Functions ---
 function Show-Failure {
     $global:helpme = $body
     $global:helpmoref = $moref
@@ -20,13 +21,16 @@ function Show-Failure {
     Write-Host -BackgroundColor:Black -ForegroundColor:Red "The request body has been saved to `$global:helpme"
     break
 }
+
+# --- Edit Variables Below ---
     
 $vCenterURL = "vc.virtuallywired.io"
 $CommonName = "vc.virtuallywired.io"
 $EmailContact = "nicholas.mangraviti@icloud.com"
 $Credential = Get-Credential
     
-    
+# --- Do Not Below This Point ---
+
 # --- This will install the Posh-ACME Module if not found.
 Write-Host "Checking for Required Module Posh-ACME" -ForegroundColor Green
     
