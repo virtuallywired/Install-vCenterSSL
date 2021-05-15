@@ -26,7 +26,7 @@ function Show-Failure {
     
 $vCenterURL = "vc.virtuallywired.io"
 $CommonName = "vc.virtuallywired.io"
-$EmailContact = "nicholas.mangraviti@icloud.com"
+$EmailContact = "nicholas@ivirtuallywired.io"
 $Credential = Get-Credential
     
 # --- Do Not Below This Point ---
