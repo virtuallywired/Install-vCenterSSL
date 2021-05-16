@@ -1,6 +1,6 @@
 # This Script will Request, Generate and Install a Free 90 Day Trusted SSL for your vCenter Server.
 # Posh-ACME PowerShell Module Requred - Credit to Ryan Bolger - https://github.com/rmbolger
-# Version: 1.0
+# Version: 1.2
 # Tested on vCenter 7
 # Test with PowerShell 5.1 and PowerShell 7
 # Script Author: Nicholas Mangraviti #VirtuallyWired
@@ -8,6 +8,7 @@
 # Usage: Just enter the vCenter URL or IP, Common Name, Email Contact.
 # You will be prompted for vCenter Credentials.
 # You will be prompted to create a TXT record on your DNS to validate Domain Ownership.
+# Added Functionally to reuse Previously Generated Valid Certificate is vFound Locally.
 
 # --- Required Functions ---
 function Show-Failure {
@@ -104,16 +105,26 @@ try {
 catch {
     Write-Error "Unable to get Session Token, Terminating Script"
     Show-Failure
-} 
-# --- Generate Free Let's Encrypt 90 Day SSL - Requires you to Validatr Domain Ownership.
-Write-Host "Requesting SSL for '$($CommonName)'" -ForegroundColor Green
+}
 
-If ($EmailContact) {
-    New-PACertificate $CommonName -AcceptTOS -Contact $EmailContact -Force
+# --- Check for Valid previously generated Certificate.
+If (($CheckSLL.AllSANs) -eq $CommonName -and (Get-Date) -gt ($CheckSLL.NotBefore) -and ($CheckSLL.NotAfter)) {
+    While ($Question -notmatch '^(Yes|No|Y|N)$') {
+        $Question = 
+        Read-Host "Previously generated certificate found, would you like to reuse it? (Yes / No)"
+    }
 }
-else {
-    New-PACertificate $CommonName -AcceptTOS -Force 
+# --- Generate Free Let's Encrypt 90 Day SSL - Requires you to Validatr Domain Ownership.
+If ($Question -ne "Yes") {
+    Write-Host "Requesting SSL for '$($CommonName)'" -ForegroundColor Green
+    If ($EmailContact) {
+        New-PACertificate $CommonName -AcceptTOS -Contact $EmailContact -Force
+    }
+    else {
+        New-PACertificate $CommonName -AcceptTOS -Force 
+    }
 }
+$Question = $null
 
 ## rootCA DST Root CA X3 - This will be appended to the Chain of trusted root certificates.
 ## https://www.identrust.com/dst-root-ca-x3
