@@ -123,11 +123,11 @@ else {
 # --- Generate Free Let's Encrypt 90 Day SSL - Requires you to Validatr Domain Ownership.
 If ($Question -match '^(No|N)$') {
     If ($EmailContact) {
-        #New-PACertificate $CommonName -AcceptTOS -Contact $EmailContact -Force
+        New-PACertificate $CommonName -AcceptTOS -Contact $EmailContact -Force
         Write-Host "Requesting SSL for '$($CommonName)'" -ForegroundColor Green
     }
     else {
-        #New-PACertificate $CommonName -AcceptTOS -Force
+        New-PACertificate $CommonName -AcceptTOS -Force
         Write-Host "Requesting SSL for '$($CommonName)' Without Contact Email" -ForegroundColor Green
     }
 }
