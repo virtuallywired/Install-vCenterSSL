@@ -108,7 +108,6 @@ catch {
 }
 
 # --- Check for Valid previously generated Certificate.
-$Question = $null
 $CheckSLL = Get-PACertificate | Where-Object {$_.AllSANs -eq $CommonName}
 
 If (($CheckSLL.AllSANs) -eq $CommonName -and (Get-Date) -gt ($CheckSLL.NotBefore) -and ($CheckSLL.NotAfter)) {
@@ -117,6 +116,10 @@ If (($CheckSLL.AllSANs) -eq $CommonName -and (Get-Date) -gt ($CheckSLL.NotBefore
         Read-Host "Previously generated certificate found, would you like to reuse it? (Yes / No)"
     }
 }
+else {
+    $Question = "No"
+}
+
 # --- Generate Free Let's Encrypt 90 Day SSL - Requires you to Validatr Domain Ownership.
 If ($Question -match '^(No|N)$') {
     If ($EmailContact) {
