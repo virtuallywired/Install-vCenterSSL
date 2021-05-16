@@ -2,7 +2,7 @@
 # Posh-ACME PowerShell Module Requred - Credit to Ryan Bolger - https://github.com/rmbolger
 # Version: 1.2
 # Tested on vCenter 7
-# Test with PowerShell 5.1 and PowerShell 7
+# Test with PowerShell 5.1 and PowerShell 7.x
 # Script Author: Nicholas Mangraviti #VirtuallyWired
 # Blog URL: virtuallywired.io
 # Usage: Just enter the vCenter URL or IP, Common Name, Email Contact.
