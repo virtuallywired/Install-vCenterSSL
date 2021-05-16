@@ -8,7 +8,7 @@
 # Usage: Just enter the vCenter URL or IP, Common Name, Email Contact.
 # You will be prompted for vCenter Credentials.
 # You will be prompted to create a TXT record on your DNS to validate Domain Ownership.
-# Added Functionally to reuse Previously Generated Valid Certificate is vFound Locally.
+# Added Functionally to reuse Previously Generated Valid Certificate is Found Locally.
 
 # --- Required Functions ---
 function Show-Failure {
