@@ -25,8 +25,8 @@ function Show-Failure {
 
 # --- Edit Variables Below ---
     
-$vCenterURL = "vc.domain.com"
-$CommonName = "vc.domain.com"
+$vCenterURL = "vc.virtuallywired.io"
+$CommonName = "vc.virtuallywired.io"
 $EmailContact = "user@domain.com"
 $Credential = Get-Credential
     
@@ -108,6 +108,9 @@ catch {
 }
 
 # --- Check for Valid previously generated Certificate.
+$Question = $null
+$CheckSLL = Get-PACertificate | Where-Object {$_.AllSANs -eq $CommonName}
+
 If (($CheckSLL.AllSANs) -eq $CommonName -and (Get-Date) -gt ($CheckSLL.NotBefore) -and ($CheckSLL.NotAfter)) {
     While ($Question -notmatch '^(Yes|No|Y|N)$') {
         $Question = 
@@ -115,16 +118,16 @@ If (($CheckSLL.AllSANs) -eq $CommonName -and (Get-Date) -gt ($CheckSLL.NotBefore
     }
 }
 # --- Generate Free Let's Encrypt 90 Day SSL - Requires you to Validatr Domain Ownership.
-If ($Question -ne "Yes") {
-    Write-Host "Requesting SSL for '$($CommonName)'" -ForegroundColor Green
+If ($Question -match '^(No|N)$') {
     If ($EmailContact) {
-        New-PACertificate $CommonName -AcceptTOS -Contact $EmailContact -Force
+        #New-PACertificate $CommonName -AcceptTOS -Contact $EmailContact -Force
+        Write-Host "Requesting SSL for '$($CommonName)'" -ForegroundColor Green
     }
     else {
-        New-PACertificate $CommonName -AcceptTOS -Force 
+        #New-PACertificate $CommonName -AcceptTOS -Force
+        Write-Host "Requesting SSL for '$($CommonName)' Without Contact Email" -ForegroundColor Green
     }
 }
-$Question = $null
 
 ## rootCA DST Root CA X3 - This will be appended to the Chain of trusted root certificates.
 ## https://www.identrust.com/dst-root-ca-x3
