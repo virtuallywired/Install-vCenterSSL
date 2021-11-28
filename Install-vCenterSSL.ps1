@@ -1,14 +1,15 @@
 # This Script will Request, Generate and Install a Free 90 Day Trusted SSL for your vCenter Server.
 # Posh-ACME PowerShell Module Requred - Credit to Ryan Bolger - https://github.com/rmbolger
-# Version: 1.2
+# Version: 1.3
 # Tested on vCenter 7
-# Test with PowerShell 5.1 and PowerShell 7.x
+# Tested with PowerShell 5.1 and PowerShell 7.x
 # Script Author: Nicholas Mangraviti #VirtuallyWired
 # Blog URL: virtuallywired.io
 # Usage: Just enter the vCenter URL or IP, Common Name, Email Contact.
 # You will be prompted for vCenter Credentials.
 # You will be prompted to create a TXT record on your DNS to validate Domain Ownership.
 # Added Functionally to reuse Previously Generated Valid Certificate is Found Locally.
+# Removed Dependancy for DST Root CA X3 and now works with ISRG Root X1 Certificate.
 
 # --- Required Functions ---
 function Show-Failure {
@@ -25,9 +26,9 @@ function Show-Failure {
 
 # --- Edit Variables Below ---
     
-$vCenterURL = "vc.domain.com"
-$CommonName = "vc.domain.com"
-$EmailContact = "user@domain.com"
+$vCenterURL = "vc.virtuallywired.io"
+$CommonName = "vc.virtuallywired.io"
+$EmailContact = "nicholas.mangraviti@icloud.com"
 $Credential = Get-Credential
     
 # --- Do Not Edit Below This Point ---
@@ -37,7 +38,7 @@ Write-Host "Checking for Required Module Posh-ACME" -ForegroundColor Green
     
 if (Get-Module -ListAvailable -Name Posh-ACME) {
     Write-Host "Posh-ACME Module Already Installed" -ForegroundColor Green
-} 
+}
 else {
     Write-Host "Posh-ACME Module Not Found, Attempting to Install" -ForegroundColor Yellow
     Install-Module -Name Posh-ACME -Scope CurrentUser
@@ -108,7 +109,7 @@ catch {
 }
 
 # --- Check for Valid previously generated Certificate.
-$CheckSLL = Get-PACertificate | Where-Object {$_.AllSANs -eq $CommonName}
+$CheckSLL = Get-PACertificate | Where-Object { $_.AllSANs -eq $CommonName }
 
 If (($CheckSLL.AllSANs) -eq $CommonName -and (Get-Date) -gt ($CheckSLL.NotBefore) -and ($CheckSLL.NotAfter)) {
     While ($Question -notmatch '^(Yes|No|Y|N)$') {
@@ -132,15 +133,13 @@ If ($Question -match '^(No|N)$') {
     }
 }
 
-## rootCA DST Root CA X3 - This will be appended to the Chain of trusted root certificates.
-## https://www.identrust.com/dst-root-ca-x3
-## Note: This Root CA Expires Sep 2021.
+## Downloading ISRG Root X1 - This will be appended to the Chain of trusted root certificates to complete the chain.
+## Validate MD5 Hash of ISRG Root X1 root Certificate
 
-## Downloading DST Root CA X3 from my Github Repo and Validate MD5 Hash.
 Write-Host "Downloading ROOT CA" -ForegroundColor Green
 $wc = [System.Net.WebClient]::new()
-$rootCaPath = 'https://raw.githubusercontent.com/virtuallywired/Install-vCenterSSL/main/DST_Root_CA_X3.key'
-$publishedHash = '139A5E4A4E0FA505378C72C5F700934CE8333F4E6B1B508886C4B0EB14F4BE99'
+$rootCaPath = 'https://letsencrypt.org/certs/isrgrootx1.pem.txt'
+$publishedHash = '22B557A27055B33606B6559F37703928D3E4AD79F110B407D04986E1843543D1'
 $FileHash = Get-FileHash -InputStream ($wc.OpenRead($rootCaPath))
 
 If ($FileHash.Hash -eq $publishedHash) {
@@ -152,9 +151,9 @@ else {
 }
 # --- Get the Content of the Certificate Files.
 Write-Host "Loading Certificate Files" -ForegroundColor Green
-$sslcert = Get-Content ((Get-PACertificate).CertFile)
+$sslcert = ((Get-Content ((Get-PACertificate).FullChainFile)) + $root_CA) -replace "`t|`n|`r", ""
 $privatekey = Get-Content ((Get-PACertificate).KeyFile)
-$fullchain = ((Get-Content ((Get-PACertificate).ChainFile)) + $root_CA) -replace "`t|`n|`r",""
+$fullchain = ((Get-Content ((Get-PACertificate).ChainFile)) + $root_CA) -replace "`t|`n|`r", ""
 
 # --- Reformats Certificate to string in PEM format
 Write-Host "Reformating Certificates to String" -ForegroundColor Green
