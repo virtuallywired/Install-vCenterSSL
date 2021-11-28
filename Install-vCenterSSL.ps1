@@ -26,9 +26,9 @@ function Show-Failure {
 
 # --- Edit Variables Below ---
     
-$vCenterURL = "vc.virtuallywired.io"
-$CommonName = "vc.virtuallywired.io"
-$EmailContact = "nicholas.mangraviti@icloud.com"
+$vCenterURL = "vc.vsphere.local"
+$CommonName = "vc.vsphere.local"
+$EmailContact = "email@vsphere.local"
 $Credential = Get-Credential
     
 # --- Do Not Edit Below This Point ---
