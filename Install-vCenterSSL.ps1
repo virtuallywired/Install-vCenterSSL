@@ -10,6 +10,7 @@
 # You will be prompted to create a TXT record on your DNS to validate Domain Ownership.
 # Added Functionally to reuse Previously Generated Valid Certificate is Found Locally.
 # Removed Dependancy for DST Root CA X3 and now works with ISRG Root X1 Certificate.
+# Added Preferred Chain "ISRG Root X1"
 
 # --- Required Functions ---
 function Show-Failure {
@@ -26,9 +27,9 @@ function Show-Failure {
 
 # --- Edit Variables Below ---
     
-$vCenterURL = "vc.vsphere.local"
-$CommonName = "vc.vsphere.local"
-$EmailContact = "email@vsphere.local"
+$vCenterURL = "vc.vmware.io"
+$CommonName = "vc.vmware.io"
+$EmailContact = "email@vmware.io"
 $Credential = Get-Credential
     
 # --- Do Not Edit Below This Point ---
@@ -110,11 +111,10 @@ catch {
 
 # --- Check for Valid previously generated Certificate.
 $CheckSLL = Get-PACertificate | Where-Object { $_.AllSANs -eq $CommonName }
-
-If (($CheckSLL.AllSANs) -eq $CommonName -and (Get-Date) -gt ($CheckSLL.NotBefore) -and ($CheckSLL.NotAfter)) {
+$Question = $null
+If (($CheckSLL.AllSANs) -eq $CommonName -and (Get-Date) -gt ($CheckSLL.NotBefore) -and (Get-Date) -lt ($CheckSLL.NotAfter)) {
     While ($Question -notmatch '^(Yes|No|Y|N)$') {
-        $Question = 
-        Read-Host "Previously generated certificate found, would you like to reuse it? (Yes / No)"
+        $Question = Read-Host "Previously generated certificate found, would you like to reuse it? (Yes / No)"
     }
 }
 else {
@@ -124,11 +124,11 @@ else {
 # --- Generate Free Let's Encrypt 90 Day SSL - Requires you to Validatr Domain Ownership.
 If ($Question -match '^(No|N)$') {
     If ($EmailContact) {
-        New-PACertificate $CommonName -AcceptTOS -Contact $EmailContact -Force
+        New-PACertificate $CommonName -AcceptTOS -Contact $EmailContact -PreferredChain "ISRG Root X1" -Force
         Write-Host "Requesting SSL for '$($CommonName)'" -ForegroundColor Green
     }
     else {
-        New-PACertificate $CommonName -AcceptTOS -Force
+        New-PACertificate $CommonName -AcceptTOS -PreferredChain "ISRG Root X1" -Force
         Write-Host "Requesting SSL for '$($CommonName)' Without Contact Email" -ForegroundColor Green
     }
 }
