@@ -30,9 +30,9 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force -Con
 
 # --- Edit Variables Below ---
     
-$vCenterURL = "vc.vmware.io"
-$CommonName = "vc.vmware.io"
-$EmailContact = "user@vmware.io"
+$vCenterURL = "vc.virtuallywired.io"
+$CommonName = "vc.virtuallywired.io"
+$EmailContact = "nicholas.mangraviti@icloud.com" #This will be used for the ACME Server Account
 $Credential = Get-Credential
     
 # --- Do Not Edit Below This Point ---
@@ -45,13 +45,26 @@ if (Get-Module -ListAvailable -Name Posh-ACME) {
 }
 else {
     Write-Host "Posh-ACME Module Not Found, Attempting to Install" -ForegroundColor Yellow
+    Write-Host "Restart of this Script is Required!" -ForegroundColor Yellow
     Install-Module -Name Posh-ACME -Scope CurrentUser -Force -Confirm:$false
+    Return
 }
+
+Do { 
+    Write-host "Waiting to for Posh-ACME Module to be Loaded" -ForegroundColor Cyan
+    $PoshACME = Get-Module -ListAvailable -Name Posh-ACME
+    Start-Sleep -Seconds 5
+}
+While ( $PoshACME -eq $null )
 
 # --- Importing the Posh-ACME Module.
 if (Get-Module -ListAvailable -Name Posh-ACME) {
     Write-Host "Importing Posh-ACME Module" -ForegroundColor Green
     Import-Module -Name Posh-ACME -Force
+}
+Else {
+    Write-host "Something Went Wrong, Stopping Script" -ForegroundColor Red
+    Break
 }
 
 # --- Setting ACME Server For First time Use - For Information See https://poshac.me/docs/v4/Functions/Set-PAServer/
@@ -62,6 +75,16 @@ else {
     Write-Host "Setting ACME Server to LE_PROD" -ForegroundColor Yellow
     Set-PAServer -DirectoryUrl LE_PROD
 } 
+
+# --- Checking for ACME Account, if not found it will create a new one --- Note: May create duplicate accounts which is harmless.
+$PAAccount = Get-PAAccount
+If ($PAAccount) {
+    Write-host "ACME Account Found with Contact: "$($PAAccount).Contact.split(":")[1]""
+}
+Else {
+    Write-Host "ACME Account Not Found, Setting ACME Account with Contact $($EmailContact)"
+    New-PAAccount -Contact $EmailContact -AcceptTOS -Force -Confirm:$false
+}
     
 # --- This section ignores invalid SSL for the WebRequest for Powershell 5.1 or Lower.
 if (-not ([System.Management.Automation.PSTypeName]'ServerCertificateValidationCallback').Type) {
@@ -129,6 +152,7 @@ catch {
 
 # --- Check for Valid previously generated Certificate.
 
+$Question = "No"
 $CheckSLL = Get-PACertificate -MainDomain $CommonName
 If ((($CheckSLL).AllSANs) -eq $CommonName -and (Get-Date) -gt ($CheckSLL.NotBefore) -and (Get-Date) -lt ($CheckSLL.NotAfter)) {
     Write-Host "A Previously Generated Certificate For '$("$CommonName")' Valid Until '$($CheckSLL.NotAfter)' Was Found" -ForegroundColor Yellow
