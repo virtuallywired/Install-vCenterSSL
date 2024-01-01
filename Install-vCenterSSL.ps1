@@ -1,7 +1,7 @@
 # This Script will Request, Generate and Install a Free 90 Day Trusted SSL for your vCenter Server.
 # Posh-ACME PowerShell Module Requred - Credit to Ryan Bolger - https://github.com/rmbolger
-# Version: 1.3
-# Tested on vCenter 7
+# Version: 1.5
+# Tested on vCenter 7 & vCenter 8
 # Tested with PowerShell 5.1 and PowerShell 7.x
 # Script Author: Nicholas Mangraviti #VirtuallyWired
 # Blog URL: virtuallywired.io
@@ -11,6 +11,7 @@
 # Added Functionally to reuse Previously Generated Valid Certificate is Found Locally.
 # Removed Dependancy for DST Root CA X3 and now works with ISRG Root X1 Certificate.
 # Added Preferred Chain "ISRG Root X1"
+# Support for first time Posh-ACME Module Usage.
 
 # --- Required Functions ---
 function Show-Failure {
@@ -25,11 +26,13 @@ function Show-Failure {
     break
 }
 
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force -Confirm:$false
+
 # --- Edit Variables Below ---
     
 $vCenterURL = "vc.vmware.io"
 $CommonName = "vc.vmware.io"
-$EmailContact = "email@vmware.io"
+$EmailContact = "user@vmware.io"
 $Credential = Get-Credential
     
 # --- Do Not Edit Below This Point ---
@@ -42,7 +45,22 @@ if (Get-Module -ListAvailable -Name Posh-ACME) {
 }
 else {
     Write-Host "Posh-ACME Module Not Found, Attempting to Install" -ForegroundColor Yellow
-    Install-Module -Name Posh-ACME -Scope CurrentUser
+    Install-Module -Name Posh-ACME -Scope CurrentUser -Force -Confirm:$false
+}
+
+# --- Importing the Posh-ACME Module.
+if (Get-Module -ListAvailable -Name Posh-ACME) {
+    Write-Host "Importing Posh-ACME Module" -ForegroundColor Green
+    Import-Module -Name Posh-ACME -Force
+}
+
+# --- Setting ACME Server For First time Use - For Information See https://poshac.me/docs/v4/Functions/Set-PAServer/
+if ((Get-PAServer).name -eq "LE_PROD") {
+    Write-Host "ACME Server Already Set to $((Get-PAServer).Name)" -ForegroundColor Green
+}
+else {
+    Write-Host "Setting ACME Server to LE_PROD" -ForegroundColor Yellow
+    Set-PAServer -DirectoryUrl LE_PROD
 } 
     
 # --- This section ignores invalid SSL for the WebRequest for Powershell 5.1 or Lower.
@@ -110,15 +128,11 @@ catch {
 }
 
 # --- Check for Valid previously generated Certificate.
-$CheckSLL = Get-PACertificate | Where-Object { $_.AllSANs -eq $CommonName }
-$Question = $null
-If (($CheckSLL.AllSANs) -eq $CommonName -and (Get-Date) -gt ($CheckSLL.NotBefore) -and (Get-Date) -lt ($CheckSLL.NotAfter)) {
-    While ($Question -notmatch '^(Yes|No|Y|N)$') {
-        $Question = Read-Host "Previously generated certificate found, would you like to reuse it? (Yes / No)"
-    }
-}
-else {
-    $Question = "No"
+
+$CheckSLL = Get-PACertificate -MainDomain $CommonName
+If ((($CheckSLL).AllSANs) -eq $CommonName -and (Get-Date) -gt ($CheckSLL.NotBefore) -and (Get-Date) -lt ($CheckSLL.NotAfter)) {
+    Write-Host "A Previously Generated Certificate For '$("$CommonName")' Valid Until '$($CheckSLL.NotAfter)' Was Found" -ForegroundColor Yellow
+    $Question = Read-Host "Would You Like To Reuse It? (Yes / No)"
 }
 
 # --- Generate Free Let's Encrypt 90 Day SSL - Requires you to Validatr Domain Ownership.
